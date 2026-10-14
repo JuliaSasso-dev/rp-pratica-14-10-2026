@@ -1,0 +1,53 @@
+services:
+  db:
+   image: postgres:16-alpine
+   environment:
+     - POSTGRES_DB: db
+     - POSTGRES_USER: postgres
+     - POSTGRES_PASSWORD: senai
+
+   ports: 5433:5432
+   
+  volumes: 
+  - pgdata:/var/lib/postgresql/data
+  - ./backend/db/bkt_quitanda.sql:/docker-entrypoint-initdb.d/init.sql
+
+
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready", -h, 127.0.0.1, -U postgres, -d quitanda"]
+    interval: 5s
+    timeout: 5s
+    retries: 10s
+
+  backend: 
+   build: ./backend
+   ports: 
+   - "3000:3000"
+   environment: 
+   - POSTGRES_PORT: 5432
+   - POSTGRES_DB: db
+   - POSTGRES_USER: postgres
+   - POSTGRES_PASSWORD: senai
+   - POSTGRES_NAME: quitanda
+
+   networks:
+   - rede
+
+   depends_on:
+   db: 
+   condition: service_healthy
+
+  frontend:
+   build: ./frontend
+   ports: 
+   - "5173:5173"
+   depends_on:
+    backend
+
+  networks: 
+  - rede
+
+
+
+
+ 
